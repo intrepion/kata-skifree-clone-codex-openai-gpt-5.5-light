@@ -1,0 +1,13 @@
+{
+  "name": "kata-skifree-clone-codex-openai-gpt-5-5-light",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "check": "node --check game.js && npx playwright test",
+    "test:browser": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Slope Free</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <canvas id="game" aria-label="Slope Free game canvas"></canvas>
+
+    <div class="hud" aria-live="polite">
+      <div class="brand">Slope Free</div>
+      <div>Distance <strong id="distance">0m</strong></div>
+      <div>Score <strong id="score">0</strong></div>
+      <div>Status <strong id="status">Ready</strong></div>
+    </div>
+
+    <div class="menu" id="menu">
+      <h1>Slope Free</h1>
+      <p>Arrow keys steer. Space starts or restarts. Ski downhill, dodge the clutter, and keep the run clean.</p>
+      <button id="start-button" type="button">Start Run</button>
+    </div>
+
+    <div class="touch-controls" aria-label="Touch controls">
+      <button type="button" data-touch="left" aria-label="Steer left">◀</button>
+      <button type="button" data-touch="start" aria-label="Start or restart">▶</button>
+      <button type="button" data-touch="right" aria-label="Steer right">▶</button>
+    </div>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
