@@ -152,4 +152,17 @@ test("MVP 3 exposes playable touch controls on mobile", async ({ page }) => {
   await page.mouse.up();
   const after = await page.evaluate(() => window.skiFreeTest.snapshot().x);
   expect(after).toBeGreaterThan(before);
+
+  await page.evaluate(() => {
+    const jump = window.skiFreeTest.snapshot().testJump;
+    window.skiFreeTest.forceX(jump.x);
+    window.skiFreeTest.forceDistance(jump.y - 4);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.skiFreeTest.snapshot().airborne))
+    .toBe(true);
+  await page.locator('[data-touch="trick"]').click();
+  await expect
+    .poll(() => page.evaluate(() => window.skiFreeTest.snapshot().trickBonus))
+    .toBe(400);
 });

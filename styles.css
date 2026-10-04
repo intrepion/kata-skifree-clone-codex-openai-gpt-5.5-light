@@ -114,7 +114,7 @@ button:focus-visible {
   bottom: 12px;
   z-index: 4;
   display: none;
-  grid-template-columns: repeat(3, 52px);
+  grid-template-columns: repeat(4, 52px);
   gap: 8px;
 }
 
@@ -130,5 +130,9 @@ button:focus-visible {
 
   .hud-actions {
     max-width: 180px;
+  }
+
+  .touch-controls {
+    grid-template-columns: repeat(4, minmax(44px, 52px));
   }
 }

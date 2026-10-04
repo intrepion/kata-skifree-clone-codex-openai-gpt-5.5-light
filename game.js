@@ -266,7 +266,7 @@
       if (dy > 42) {
         break;
       }
-      if (isAirborne() && obstacle.type !== "tree") {
+      if (isAirborne()) {
         continue;
       }
       var radius = obstacle.type === "tree" ? 20 : obstacle.type === "rock" ? 15 : 13;
@@ -595,6 +595,17 @@
     startRun(nextSeed);
   }
 
+  function triggerTrick() {
+    if (!isAirborne() || state.trickHeld) {
+      return;
+    }
+    state.trickHeld = true;
+    state.trickBonus += 400;
+    state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus + state.prestigeScore;
+    playTone(520, 0.1);
+    updateHud();
+  }
+
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
@@ -621,12 +632,8 @@
       }
       restartRun();
       event.preventDefault();
-    } else if (event.key.toLowerCase() === "z" && isAirborne() && !state.trickHeld) {
-      state.trickHeld = true;
-      state.trickBonus += 400;
-      state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus;
-      playTone(520, 0.1);
-      updateHud();
+    } else if (event.key.toLowerCase() === "z") {
+      triggerTrick();
     }
   });
   window.addEventListener("keyup", function (event) {
@@ -652,6 +659,8 @@
         keys.left = true;
       } else if (action === "right") {
         keys.right = true;
+      } else if (action === "trick") {
+        triggerTrick();
       } else {
         restartRun();
       }

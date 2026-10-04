@@ -7,7 +7,7 @@ A dependency-free browser SkiFree homage. Open `index.html` directly in a browse
 - `ArrowLeft` / `ArrowRight`: steer
 - `Z`: trick while airborne
 - `Space`: start or restart
-- Touch buttons: steer and start/restart on mobile-sized screens
+- Touch buttons: steer, trick, and start/restart on mobile-sized screens
 
 ## Gameplay
 
