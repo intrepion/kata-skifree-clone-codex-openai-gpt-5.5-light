@@ -5,9 +5,12 @@
   var ctx = canvas.getContext("2d");
   var distanceEl = document.getElementById("distance");
   var scoreEl = document.getElementById("score");
+  var bestEl = document.getElementById("best");
   var statusEl = document.getElementById("status");
   var menu = document.getElementById("menu");
   var startButton = document.getElementById("start-button");
+  var newSlopeButton = document.getElementById("new-slope-button");
+  var resetBestsButton = document.getElementById("reset-bests-button");
 
   var WORLD_WIDTH = 1400;
   var SKIER_Y_RATIO = 0.34;
@@ -15,9 +18,13 @@
   var OBSTACLE_AHEAD = 2600;
   var START_SEED = 1936;
   var BESTS_KEY = "slope-free-bests-v1";
+  var YETI_WARNING_DISTANCE = 1200;
+  var YETI_DISTANT_DISTANCE = 1450;
+  var YETI_CHASE_DISTANCE = 1650;
 
   var state = makeInitialState(START_SEED);
   var bests = readBests();
+  var audioContext = null;
   var lastTime = performance.now();
   var keys = { left: false, right: false };
 
@@ -32,10 +39,16 @@
       score: 0,
       gateBonus: 0,
       trickBonus: 0,
+      prestigeScore: 0,
       airborneUntil: 0,
       trickHeld: false,
+      yetiState: "quiet",
+      yetiX: -240,
+      yetiGap: 290,
+      nextToneAt: 0,
       crashedAt: 0,
       obstacles: generateObstacles(seed >>> 0, OBSTACLE_AHEAD),
+      movingHazards: generateMovingHazards(seed >>> 0, OBSTACLE_AHEAD),
       gates: generateGates(seed >>> 0, OBSTACLE_AHEAD),
       jumps: generateJumps(seed >>> 0, OBSTACLE_AHEAD)
     };
@@ -71,6 +84,24 @@
       return a.y - b.y;
     });
     return obstacles;
+  }
+
+  function generateMovingHazards(seed, depth) {
+    var random = mulberry32((seed ^ 0xc2b2ae35) >>> 0);
+    var hazards = [];
+    for (var y = 780; y < depth; y += 700) {
+      hazards.push({
+        x: Math.round((random() - 0.5) * (WORLD_WIDTH - 260)),
+        y: y + Math.round(random() * 120),
+        phase: random() * Math.PI * 2,
+        span: 80 + random() * 90
+      });
+    }
+    hazards.push({ x: -160, y: 1120, phase: 0, span: 120, testMovingHazard: true });
+    hazards.sort(function (a, b) {
+      return a.y - b.y;
+    });
+    return hazards;
   }
 
   function generateGates(seed, depth) {
@@ -131,6 +162,7 @@
       return;
     }
     saveBests();
+    playTone(72, 0.18);
     state.mode = "crashed";
     state.crashedAt = performance.now();
     menu.hidden = false;
@@ -148,9 +180,39 @@
     state.distance += state.speed * dt;
     checkGatePasses();
     checkJumpLaunches();
-    state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus;
+    updateYeti(dt);
+    state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus + state.prestigeScore;
     checkObstacleCollision();
+    checkMovingHazardCollision();
+    checkYetiCapture();
     updateHud();
+  }
+
+  function updateYeti(dt) {
+    if (state.distance >= YETI_CHASE_DISTANCE) {
+      if (state.yetiState !== "chase") {
+        playTone(128, 0.22);
+      }
+      state.yetiState = "chase";
+      state.yetiGap = Math.max(38, state.yetiGap - 80 * dt);
+      state.yetiX += (state.x - state.yetiX) * Math.min(1, dt * 2.1);
+      state.prestigeScore += Math.floor(dt * 180);
+      if (performance.now() > state.nextToneAt) {
+        playTone(96, 0.08);
+        state.nextToneAt = performance.now() + 1250;
+      }
+    } else if (state.distance >= YETI_DISTANT_DISTANCE) {
+      if (state.yetiState !== "distant") {
+        playTone(180, 0.16);
+      }
+      state.yetiState = "distant";
+      state.yetiX += (state.x - 180 - state.yetiX) * Math.min(1, dt * 0.8);
+    } else if (state.distance >= YETI_WARNING_DISTANCE) {
+      if (state.yetiState !== "warning") {
+        playTone(220, 0.12);
+      }
+      state.yetiState = "warning";
+    }
   }
 
   function checkGatePasses() {
@@ -164,6 +226,7 @@
         if (Math.abs(state.x - gate.x) <= gate.width / 2) {
           gate.passed = true;
           state.gateBonus += 250;
+          playTone(392, 0.08);
         } else {
           gate.passed = true;
         }
@@ -186,6 +249,7 @@
         jump.used = true;
         state.airborneUntil = state.distance + 170;
         state.trickHeld = false;
+        playTone(300, 0.08);
       } else if (dy > 36) {
         break;
       }
@@ -214,6 +278,33 @@
     }
   }
 
+  function checkMovingHazardCollision() {
+    for (var i = 0; i < state.movingHazards.length; i += 1) {
+      var hazard = state.movingHazards[i];
+      var dy = hazard.y - state.distance;
+      if (dy < -60) {
+        continue;
+      }
+      if (dy > 42) {
+        break;
+      }
+      var hazardX = hazard.x + Math.sin(state.distance / 120 + hazard.phase) * hazard.span;
+      if (Math.abs(hazardX - state.x) < 26 && Math.abs(dy) < 24) {
+        crash();
+        return;
+      }
+    }
+  }
+
+  function checkYetiCapture() {
+    if (state.yetiState !== "chase") {
+      return;
+    }
+    if (state.yetiGap <= 42 && Math.abs(state.yetiX - state.x) < 60) {
+      crash();
+    }
+  }
+
   function isAirborne() {
     return state.mode === "running" && state.distance < state.airborneUntil;
   }
@@ -227,10 +318,56 @@
     drawGates(width, height);
     drawJumps(width, height);
     drawObstacles(width, height);
+    drawMovingHazards(width, height);
+    drawYeti(width, height);
     drawSkier(width / 2 + state.x, height * SKIER_Y_RATIO);
     if (state.mode === "crashed") {
       drawCrashText(width, height);
     }
+  }
+
+  function drawMovingHazards(width, height) {
+    for (var i = 0; i < state.movingHazards.length; i += 1) {
+      var hazard = state.movingHazards[i];
+      var screenY = height * SKIER_Y_RATIO + (hazard.y - state.distance);
+      if (screenY < -50 || screenY > height + 70) {
+        continue;
+      }
+      var hazardX = hazard.x + Math.sin(state.distance / 120 + hazard.phase) * hazard.span;
+      var screenX = width / 2 + (hazardX - state.x);
+      ctx.fillStyle = "#2e76a8";
+      ctx.fillRect(screenX - 18, screenY - 7, 36, 14);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(screenX - 11, screenY - 3, 22, 6);
+    }
+  }
+
+  function drawYeti(width, height) {
+    if (state.yetiState === "quiet") {
+      return;
+    }
+    var y = height * SKIER_Y_RATIO + state.yetiGap;
+    if (state.yetiState === "warning") {
+      ctx.fillStyle = "#102131";
+      ctx.font = "700 18px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Something is climbing the slope.", width / 2, height - 72);
+      return;
+    }
+    var x = width / 2 + (state.yetiX - state.x);
+    ctx.fillStyle = "#f4f7fa";
+    ctx.strokeStyle = "#21313f";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y - 22, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillRect(x - 29, y - 14, 58, 62);
+    ctx.strokeRect(x - 29, y - 14, 58, 62);
+    ctx.fillStyle = "#21313f";
+    ctx.fillRect(x - 10, y - 28, 5, 5);
+    ctx.fillRect(x + 6, y - 28, 5, 5);
+    ctx.fillRect(x - 11, y - 8, 22, 5);
   }
 
   function drawGates(width, height) {
@@ -388,8 +525,18 @@
   function updateHud() {
     distanceEl.textContent = Math.floor(state.distance) + "m";
     scoreEl.textContent = String(state.score);
-    statusEl.textContent = state.mode === "running" ? "Running" : state.mode === "crashed" ? "Crashed" : "Ready";
-    statusEl.title = "Best " + bests.score + " / " + bests.distance + "m";
+    bestEl.textContent = bests.score + " / " + bests.distance + "m";
+    if (state.mode === "crashed") {
+      statusEl.textContent = "Crashed";
+    } else if (state.yetiState === "chase") {
+      statusEl.textContent = "Yeti chase";
+    } else if (state.yetiState === "distant") {
+      statusEl.textContent = "Yeti sighted";
+    } else if (state.yetiState === "warning") {
+      statusEl.textContent = "Warning";
+    } else {
+      statusEl.textContent = state.mode === "running" ? "Running" : "Ready";
+    }
   }
 
   function readBests() {
@@ -412,6 +559,40 @@
       };
       localStorage.setItem(BESTS_KEY, JSON.stringify(bests));
     }
+  }
+
+  function ensureAudio() {
+    if (audioContext) {
+      return audioContext;
+    }
+    var AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) {
+      return null;
+    }
+    audioContext = new AudioCtor();
+    return audioContext;
+  }
+
+  function playTone(frequency, duration) {
+    var audio = ensureAudio();
+    if (!audio) {
+      return;
+    }
+    var oscillator = audio.createOscillator();
+    var gain = audio.createGain();
+    oscillator.frequency.value = frequency;
+    oscillator.type = "square";
+    gain.gain.setValueAtTime(0.0001, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.045, audio.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
+    oscillator.connect(gain).connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(audio.currentTime + duration + 0.02);
+  }
+
+  function newSlope() {
+    var nextSeed = (state.seed + 2654435761) >>> 0;
+    startRun(nextSeed);
   }
 
   function clamp(value, min, max) {
@@ -444,6 +625,7 @@
       state.trickHeld = true;
       state.trickBonus += 400;
       state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus;
+      playTone(520, 0.1);
       updateHud();
     }
   });
@@ -455,6 +637,12 @@
     }
   });
   startButton.addEventListener("click", restartRun);
+  newSlopeButton.addEventListener("click", newSlope);
+  resetBestsButton.addEventListener("click", function () {
+    bests = { score: 0, distance: 0 };
+    localStorage.removeItem(BESTS_KEY);
+    updateHud();
+  });
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-touch]"), function (button) {
     var action = button.getAttribute("data-touch");
@@ -493,12 +681,16 @@
         score: state.score,
         gateBonus: state.gateBonus,
         trickBonus: state.trickBonus,
+        prestigeScore: state.prestigeScore,
         airborne: isAirborne(),
+        yetiState: state.yetiState,
+        yetiGap: Math.round(state.yetiGap),
         bests: {
           score: bests.score,
           distance: bests.distance
         },
         obstacleCount: state.obstacles.length,
+        movingHazardCount: state.movingHazards.length,
         gateCount: state.gates.length,
         jumpCount: state.jumps.length,
         testObstacle: state.obstacles.filter(function (obstacle) {
@@ -509,6 +701,9 @@
         })[0] || null,
         testJump: state.jumps.filter(function (jump) {
           return jump.testJump;
+        })[0] || null,
+        testMovingHazard: state.movingHazards.filter(function (hazard) {
+          return hazard.testMovingHazard;
         })[0] || null
       };
     },
@@ -524,9 +719,19 @@
       crash();
       saveBests();
     },
+    forceYetiPhase: function (distance) {
+      state.distance = typeof distance === "number" ? distance : YETI_CHASE_DISTANCE + 10;
+      state.yetiState = "chase";
+      state.yetiGap = 40;
+      state.yetiX = state.x;
+      state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus + state.prestigeScore;
+      updateHud();
+    },
+    newSlope: newSlope,
     resetBests: function () {
       bests = { score: 0, distance: 0 };
       localStorage.removeItem(BESTS_KEY);
+      updateHud();
     }
   };
 
