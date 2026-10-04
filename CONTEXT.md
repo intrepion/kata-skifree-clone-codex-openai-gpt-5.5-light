@@ -8,6 +8,14 @@ This context defines the product language for a browser-playable downhill skiing
 A single downhill attempt from start until crash, restart, or yeti capture.
 _Avoid_: Match, level, session
 
+**Slope Seed**:
+The value that determines the repeatable arrangement of gates, jumps, and obstacles for a slope.
+_Avoid_: Random map, level code
+
+**New Slope**:
+The player command that starts a run on a fresh slope seed.
+_Avoid_: New game, shuffle, reroll
+
 **Slope**:
 The continuously scrolling snowy playfield where the run happens.
 _Avoid_: Map, world, resort
@@ -48,6 +56,14 @@ _Avoid_: Ramp, kicker, launch pad
 A simple airborne action that rewards timing during a jump.
 _Avoid_: Combo move, stunt, ability
 
+**Airborne State**:
+The brief state after using a jump where the skier can earn trick points and clear low obstacles.
+_Avoid_: Flight mode, invulnerability, jump mode
+
+**Crash**:
+The run-ending tumble caused by colliding with an obstacle or being caught by the yeti.
+_Avoid_: Damage, death, failure state
+
 **Yeti**:
 The late-run pressure creature that appears after a distance milestone and can capture the skier.
 _Avoid_: Monster, boss, enemy
@@ -71,3 +87,7 @@ _Avoid_: Retro filter, ski resort realism, modern sports broadcast
 **Deadpan HUD**:
 The minimal, straight-faced on-screen display for distance, score, run state, and bests.
 _Avoid_: Tutorial panel, announcer overlay, sports broadcast
+
+**Local Best**:
+A best score or distance stored in the browser for the current device.
+_Avoid_: Leaderboard, profile, save file
