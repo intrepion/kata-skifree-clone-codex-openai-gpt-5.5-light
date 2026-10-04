@@ -24,6 +24,22 @@ _Avoid_: Checkpoint, hoop, flag pair
 A slope object that threatens the run through collision or forced evasion.
 _Avoid_: Enemy, hazard, trap
 
+**Tree**:
+A fixed obstacle that acts as the most common readability test on the slope.
+_Avoid_: Pine, forest tile
+
+**Rock**:
+A fixed obstacle with a compact collision profile that breaks up tree-only dodging.
+_Avoid_: Boulder, stone
+
+**Stump**:
+A low fixed obstacle that adds visual and collision variety without changing the run's core rules.
+_Avoid_: Log, trunk
+
+**Moving Hazard**:
+A non-yeti obstacle that crosses or drifts through the slope during a run.
+_Avoid_: Enemy, NPC, monster
+
 **Jump**:
 A slope feature that launches the skier into a brief airborne state.
 _Avoid_: Ramp, kicker, launch pad
@@ -36,10 +52,22 @@ _Avoid_: Combo move, stunt, ability
 The late-run pressure creature that appears after a distance milestone and can capture the skier.
 _Avoid_: Monster, boss, enemy
 
+**Yeti Phase**:
+The late-run state where warnings give way to an active chase by the yeti.
+_Avoid_: Boss fight, final level, monster round
+
 **Milestone Survival**:
 The core success model: ski far enough to trigger the yeti phase, then survive as long and as skillfully as possible.
 _Avoid_: Campaign, finish line, pure endless mode
 
+**Prestige Score**:
+The score contribution earned by surviving after the yeti phase begins.
+_Avoid_: Endgame points, bonus round score
+
 **Nostalgic Presentation**:
 The visual identity: early desktop-era clarity, tiny readable sprites, flat snow, and immediate legibility on modern screens.
 _Avoid_: Retro filter, ski resort realism, modern sports broadcast
+
+**Deadpan HUD**:
+The minimal, straight-faced on-screen display for distance, score, run state, and bests.
+_Avoid_: Tutorial panel, announcer overlay, sports broadcast
