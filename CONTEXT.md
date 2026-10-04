@@ -88,6 +88,18 @@ _Avoid_: Retro filter, ski resort realism, modern sports broadcast
 The minimal, straight-faced on-screen display for distance, score, run state, and bests.
 _Avoid_: Tutorial panel, announcer overlay, sports broadcast
 
+**Full-Window Canvas**:
+The responsive play surface that fills the browser window behind the compact HUD.
+_Avoid_: Game frame, embed, viewport panel
+
+**Touch Controls**:
+The mobile-sized thumb controls used to steer, jump, and restart without a keyboard.
+_Avoid_: Mobile mode, virtual keyboard, accessibility controls
+
 **Local Best**:
 A best score or distance stored in the browser for the current device.
 _Avoid_: Leaderboard, profile, save file
+
+**Test Surface**:
+The narrow browser API used by automated checks to control seeds, inspect state, and force milestone conditions.
+_Avoid_: Cheat API, debug console, admin mode
