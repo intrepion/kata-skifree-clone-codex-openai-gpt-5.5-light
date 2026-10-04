@@ -14,8 +14,10 @@
   var PLAYER_RADIUS = 15;
   var OBSTACLE_AHEAD = 2600;
   var START_SEED = 1936;
+  var BESTS_KEY = "slope-free-bests-v1";
 
   var state = makeInitialState(START_SEED);
+  var bests = readBests();
   var lastTime = performance.now();
   var keys = { left: false, right: false };
 
@@ -28,8 +30,14 @@
       speed: 235,
       steer: 0,
       score: 0,
+      gateBonus: 0,
+      trickBonus: 0,
+      airborneUntil: 0,
+      trickHeld: false,
       crashedAt: 0,
-      obstacles: generateObstacles(seed >>> 0, OBSTACLE_AHEAD)
+      obstacles: generateObstacles(seed >>> 0, OBSTACLE_AHEAD),
+      gates: generateGates(seed >>> 0, OBSTACLE_AHEAD),
+      jumps: generateJumps(seed >>> 0, OBSTACLE_AHEAD)
     };
   }
 
@@ -65,6 +73,41 @@
     return obstacles;
   }
 
+  function generateGates(seed, depth) {
+    var random = mulberry32((seed ^ 0x9e3779b9) >>> 0);
+    var gates = [];
+    for (var y = 380; y < depth; y += 420) {
+      gates.push({
+        x: Math.round((random() - 0.5) * (WORLD_WIDTH - 360)),
+        y: y + Math.round(random() * 80),
+        width: 124,
+        passed: false
+      });
+    }
+    gates.push({ x: 0, y: 520, width: 124, passed: false, testGate: true });
+    gates.sort(function (a, b) {
+      return a.y - b.y;
+    });
+    return gates;
+  }
+
+  function generateJumps(seed, depth) {
+    var random = mulberry32((seed ^ 0x85ebca6b) >>> 0);
+    var jumps = [];
+    for (var y = 640; y < depth; y += 620) {
+      jumps.push({
+        x: Math.round((random() - 0.5) * (WORLD_WIDTH - 300)),
+        y: y + Math.round(random() * 110),
+        used: false
+      });
+    }
+    jumps.push({ x: 0, y: 900, used: false, testJump: true });
+    jumps.sort(function (a, b) {
+      return a.y - b.y;
+    });
+    return jumps;
+  }
+
   function resize() {
     var scale = window.devicePixelRatio || 1;
     canvas.width = Math.floor(window.innerWidth * scale);
@@ -87,6 +130,7 @@
     if (state.mode !== "running") {
       return;
     }
+    saveBests();
     state.mode = "crashed";
     state.crashedAt = performance.now();
     menu.hidden = false;
@@ -102,9 +146,50 @@
     state.x += state.steer * 340 * dt;
     state.x = clamp(state.x, -WORLD_WIDTH / 2 + 28, WORLD_WIDTH / 2 - 28);
     state.distance += state.speed * dt;
-    state.score = Math.floor(state.distance);
+    checkGatePasses();
+    checkJumpLaunches();
+    state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus;
     checkObstacleCollision();
     updateHud();
+  }
+
+  function checkGatePasses() {
+    for (var i = 0; i < state.gates.length; i += 1) {
+      var gate = state.gates[i];
+      if (gate.passed) {
+        continue;
+      }
+      var dy = gate.y - state.distance;
+      if (dy < -12) {
+        if (Math.abs(state.x - gate.x) <= gate.width / 2) {
+          gate.passed = true;
+          state.gateBonus += 250;
+        } else {
+          gate.passed = true;
+        }
+      } else if (dy > 30) {
+        break;
+      }
+    }
+  }
+
+  function checkJumpLaunches() {
+    for (var i = 0; i < state.jumps.length; i += 1) {
+      var jump = state.jumps[i];
+      if (jump.used) {
+        continue;
+      }
+      var dy = jump.y - state.distance;
+      if (dy < -10) {
+        jump.used = true;
+      } else if (dy <= 16 && Math.abs(state.x - jump.x) < 42) {
+        jump.used = true;
+        state.airborneUntil = state.distance + 170;
+        state.trickHeld = false;
+      } else if (dy > 36) {
+        break;
+      }
+    }
   }
 
   function checkObstacleCollision() {
@@ -117,6 +202,9 @@
       if (dy > 42) {
         break;
       }
+      if (isAirborne() && obstacle.type !== "tree") {
+        continue;
+      }
       var radius = obstacle.type === "tree" ? 20 : obstacle.type === "rock" ? 15 : 13;
       var forgivingRadius = radius + PLAYER_RADIUS - 8;
       if (Math.abs(obstacle.x - state.x) < forgivingRadius && Math.abs(dy) < forgivingRadius) {
@@ -126,16 +214,61 @@
     }
   }
 
+  function isAirborne() {
+    return state.mode === "running" && state.distance < state.airborneUntil;
+  }
+
   function render() {
     var width = window.innerWidth;
     var height = window.innerHeight;
     ctx.clearRect(0, 0, width, height);
     drawSnow(width, height);
     drawLaneHints(width, height);
+    drawGates(width, height);
+    drawJumps(width, height);
     drawObstacles(width, height);
     drawSkier(width / 2 + state.x, height * SKIER_Y_RATIO);
     if (state.mode === "crashed") {
       drawCrashText(width, height);
+    }
+  }
+
+  function drawGates(width, height) {
+    for (var i = 0; i < state.gates.length; i += 1) {
+      var gate = state.gates[i];
+      var screenY = height * SKIER_Y_RATIO + (gate.y - state.distance);
+      if (screenY < -40 || screenY > height + 60) {
+        continue;
+      }
+      var screenX = width / 2 + (gate.x - state.x);
+      ctx.strokeStyle = gate.passed ? "#b5c6d3" : "#d92d2d";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(screenX - gate.width / 2, screenY - 26);
+      ctx.lineTo(screenX - gate.width / 2, screenY + 26);
+      ctx.moveTo(screenX + gate.width / 2, screenY - 26);
+      ctx.lineTo(screenX + gate.width / 2, screenY + 26);
+      ctx.stroke();
+    }
+  }
+
+  function drawJumps(width, height) {
+    for (var i = 0; i < state.jumps.length; i += 1) {
+      var jump = state.jumps[i];
+      var screenY = height * SKIER_Y_RATIO + (jump.y - state.distance);
+      if (screenY < -50 || screenY > height + 70) {
+        continue;
+      }
+      var screenX = width / 2 + (jump.x - state.x);
+      ctx.fillStyle = jump.used ? "#d6c9ad" : "#d8b46a";
+      ctx.beginPath();
+      ctx.moveTo(screenX - 34, screenY + 18);
+      ctx.lineTo(screenX, screenY - 12);
+      ctx.lineTo(screenX + 34, screenY + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#8e6d2c";
+      ctx.stroke();
     }
   }
 
@@ -217,6 +350,10 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(state.steer * 0.22);
+    if (isAirborne()) {
+      ctx.translate(0, -18);
+      ctx.scale(1.08, 1.08);
+    }
     if (state.mode === "crashed") {
       ctx.rotate(1.25);
     }
@@ -252,6 +389,29 @@
     distanceEl.textContent = Math.floor(state.distance) + "m";
     scoreEl.textContent = String(state.score);
     statusEl.textContent = state.mode === "running" ? "Running" : state.mode === "crashed" ? "Crashed" : "Ready";
+    statusEl.title = "Best " + bests.score + " / " + bests.distance + "m";
+  }
+
+  function readBests() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(BESTS_KEY) || "{}");
+      return {
+        score: Number(parsed.score) || 0,
+        distance: Number(parsed.distance) || 0
+      };
+    } catch (error) {
+      return { score: 0, distance: 0 };
+    }
+  }
+
+  function saveBests() {
+    if (state.score > bests.score || state.distance > bests.distance) {
+      bests = {
+        score: Math.max(bests.score, state.score),
+        distance: Math.max(bests.distance, Math.floor(state.distance))
+      };
+      localStorage.setItem(BESTS_KEY, JSON.stringify(bests));
+    }
   }
 
   function clamp(value, min, max) {
@@ -280,6 +440,11 @@
       }
       restartRun();
       event.preventDefault();
+    } else if (event.key.toLowerCase() === "z" && isAirborne() && !state.trickHeld) {
+      state.trickHeld = true;
+      state.trickBonus += 400;
+      state.score = Math.floor(state.distance) + state.gateBonus + state.trickBonus;
+      updateHud();
     }
   });
   window.addEventListener("keyup", function (event) {
@@ -326,18 +491,43 @@
         x: Math.round(state.x),
         distance: Math.floor(state.distance),
         score: state.score,
+        gateBonus: state.gateBonus,
+        trickBonus: state.trickBonus,
+        airborne: isAirborne(),
+        bests: {
+          score: bests.score,
+          distance: bests.distance
+        },
         obstacleCount: state.obstacles.length,
+        gateCount: state.gates.length,
+        jumpCount: state.jumps.length,
         testObstacle: state.obstacles.filter(function (obstacle) {
           return obstacle.testObstacle;
+        })[0] || null,
+        testGate: state.gates.filter(function (gate) {
+          return gate.testGate;
+        })[0] || null,
+        testJump: state.jumps.filter(function (jump) {
+          return jump.testJump;
         })[0] || null
       };
     },
     forceDistance: function (distance) {
       state.distance = distance;
-      state.score = Math.floor(distance);
+      state.score = Math.floor(distance) + state.gateBonus + state.trickBonus;
       updateHud();
     },
-    forceCrash: crash
+    forceX: function (x) {
+      state.x = x;
+    },
+    forceCrash: function () {
+      crash();
+      saveBests();
+    },
+    resetBests: function () {
+      bests = { score: 0, distance: 0 };
+      localStorage.removeItem(BESTS_KEY);
+    }
   };
 
   resize();
