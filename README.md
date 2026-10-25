@@ -1,5 +1,9 @@
 # Slope Free
 
+## Play online
+
+[Play Slope Free](https://intrepion.github.io/kata-skifree-clone-codex-openai-gpt-5.5-light/) — free, playable in your browser.
+
 A dependency-free browser SkiFree homage. Open `index.html` directly in a browser to play.
 
 ## Controls
