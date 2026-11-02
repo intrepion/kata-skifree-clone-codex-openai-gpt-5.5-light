@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "workflowCommit": "683d1a439162600a0caba5ae84c6b49e1ca191bf",
+  "sourceCommit": "a62618c5310d73093fb7f8affb78eb11cbfb6b4d",
+  "runId": "41393337979",
+  "url": "http://127.0.0.1:4195/",
+  "inputs": {
+    "index.html": "ad51ac85f7ed3e13f626ba08e6323e5b839743cbdb193f588bbf84ec3cea7839",
+    "styles.css": "726adfe7531e2ffecfb63239c85a48f554f6ab613406ab2d8a404d7b0e3e0f17",
+    "game.js": "c7f58c8ad150ef321d2430f434be4b5b96b6dbfc8e2123bbd30c2c7e2287edc9"
+  },
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 1280,
+    "height": 1000
+  },
+  "screenshots": [
+    "slope-01.png",
+    "slope-02.png"
+  ]
+}

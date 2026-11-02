@@ -1,6 +1,47 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gameId": "kata-skifree-clone-codex-openai-gpt-5.5-light",
   "playUrl": "https://intrepion.github.io/kata-skifree-clone-codex-openai-gpt-5.5-light/",
-  "screenshots": []
+  "screenshots": [
+    {
+      "path": "arcade/screenshots/ci-20261102-01.jpg",
+      "sha256": "fc0c55b4990e19ed69e80fd5b07ec06bd354c94661189d2ff61d20f1954d72eb",
+      "alt": "Slope Free gameplay, view 1",
+      "provenance": {
+        "kind": "ci_gameplay_capture",
+        "sourcePath": "arcade/capture-evidence/ci-20261102-01.png",
+        "sourceSha256": "e67234463330eb4386d53e6375a27339c6eac87c22789cd4f72f8a8db5137850",
+        "captureCommit": "a62618c5310d73093fb7f8affb78eb11cbfb6b4d",
+        "workflowRunId": "41393337979",
+        "inputHashes": {
+          "index.html": "ad51ac85f7ed3e13f626ba08e6323e5b839743cbdb193f588bbf84ec3cea7839",
+          "styles.css": "726adfe7531e2ffecfb63239c85a48f554f6ab613406ab2d8a404d7b0e3e0f17",
+          "game.js": "c7f58c8ad150ef321d2430f434be4b5b96b6dbfc8e2123bbd30c2c7e2287edc9"
+        },
+        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
+        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
+        "captureRecordSha256": "d03b1cafa9b8c70d99a9a9b7121f45dee9ba9978d67adf3d0b3187d38cbaa5fa"
+      }
+    },
+    {
+      "path": "arcade/screenshots/ci-20261102-02.jpg",
+      "sha256": "cfa3874a48f14b7cd143fc4b18d1197a08451f477b7a0fb1db2fe76f37327987",
+      "alt": "Slope Free gameplay, view 2",
+      "provenance": {
+        "kind": "ci_gameplay_capture",
+        "sourcePath": "arcade/capture-evidence/ci-20261102-02.png",
+        "sourceSha256": "99227af5dc5eb13214c9db5bcd79a693d83a1368d21e7a957c26fde3837d2c64",
+        "captureCommit": "a62618c5310d73093fb7f8affb78eb11cbfb6b4d",
+        "workflowRunId": "41393337979",
+        "inputHashes": {
+          "index.html": "ad51ac85f7ed3e13f626ba08e6323e5b839743cbdb193f588bbf84ec3cea7839",
+          "styles.css": "726adfe7531e2ffecfb63239c85a48f554f6ab613406ab2d8a404d7b0e3e0f17",
+          "game.js": "c7f58c8ad150ef321d2430f434be4b5b96b6dbfc8e2123bbd30c2c7e2287edc9"
+        },
+        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
+        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
+        "captureRecordSha256": "d03b1cafa9b8c70d99a9a9b7121f45dee9ba9978d67adf3d0b3187d38cbaa5fa"
+      }
+    }
+  ]
 }
