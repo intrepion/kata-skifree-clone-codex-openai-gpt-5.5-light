@@ -27,3 +27,7 @@ MVP 3 adds moving hazards, a staged yeti warning/sighting/chase arc, generated b
 npm install
 npm run check
 ```
+
+## Arcade metadata
+
+See [docs/arcade-metadata.md](docs/arcade-metadata.md) for the game-owned manifest and screenshot provenance.
